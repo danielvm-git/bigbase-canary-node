@@ -1,0 +1,15 @@
+{
+  "name": "bigbase-canary-node",
+  "version": "0.1.0",
+  "description": "Minimal Node canary proving big-release + bigbase-deploy interop",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test server.test.js"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

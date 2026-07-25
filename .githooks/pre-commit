@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if [ -f scripts/preflight.sh ]; then
+  bash scripts/preflight.sh
+else
+  echo "WARN: no scripts/preflight.sh — skipping pre-commit checks"
+fi

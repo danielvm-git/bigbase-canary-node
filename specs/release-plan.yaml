@@ -1,0 +1,12 @@
+release:
+  version: "0.1.0"
+  bump_hint: minor
+  codename: canary-genesis
+
+epics:
+  - id: e01
+    title: Canary site scaffold
+    wsjf: 1
+    bcps_total: null
+    stories:
+      - e01s01

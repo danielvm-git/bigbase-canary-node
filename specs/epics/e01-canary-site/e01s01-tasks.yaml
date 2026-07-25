@@ -1,0 +1,21 @@
+story: e01s01
+bcps: 3
+tasks:
+  - id: t1
+    title: Write failing test for GET / footer content and PORT binding
+    verify: "npm test 2>&1 | grep -i fail"
+  - id: t2
+    title: Implement server.js to pass the test (reads process.env.PORT)
+    verify: "npm test"
+  - id: t3
+    title: Add .big-release.yml
+    verify: "test -f .big-release.yml && grep -q tagFormat .big-release.yml"
+  - id: t4
+    title: Copy + patch CI templates (test-build-release.yml, deploy.yml) — SITE_URL in both files
+    verify: "! grep -rn CHANGE-ME .github/workflows/*.yml"
+  - id: t5
+    title: Provision bigbase site + GitHub secrets
+    verify: "gh secret list -R danielvm-git/bigbase-canary-node | grep -q BIGBASE_SITE_ID"
+  - id: t6
+    title: Land on main, confirm green CI + live deploy (content-verified)
+    verify: "curl -s https://node.bigbase.click | grep -q 'bigbase canary (Node)'"

@@ -1,0 +1,48 @@
+core_value: >
+  Prove, on every push, that big-release and bigbase-deploy still work together —
+  a minimal Node site that exists to be a regression signal, not a product.
+
+summary: >
+  bigbase-canary-node is the Node member of a four-language canary fleet
+  (go/python/node/php), standing up the smallest possible app in each stack,
+  wired through the same release-and-deploy pipeline real bigbase-hosted projects
+  use. Each push to main runs test-build-release.yml, which on success triggers
+  deploy.yml: big-release cuts a semver tag + changelog entry from Conventional
+  Commits, then bigbase-deploy ships that exact commit to node.bigbase.click and
+  health-checks it. The app's only job is to read VERSION and render it in an
+  HTML footer.
+
+in_scope:
+  - item: Minimal Express app (one route) reading process.env.PORT
+    maps_to: e01s01
+  - item: VERSION file read at request time, rendered into an HTML footer
+    maps_to: e01s01
+  - item: .big-release.yml (tagFormat v${version}, plugins changelog/git/github)
+    maps_to: e01s01
+  - item: CI via .github's test-build-release-node.yml + deploy-node.yml pair, release job patched to run big-release instead of semantic-release
+    maps_to: e01s01
+  - item: bigbase site provisioning (site "node" -> node.bigbase.click) and GitHub secrets (BIGBASE_SITE_ID, BIGBASE_DEPLOY_TOKEN)
+    maps_to: e01s01
+
+out_of_scope:
+  - item: Any real product feature (auth, persistence, multi-page routing)
+    reason: not valuable — this repo's value is being small and stable
+  - item: Non-Node implementations
+    reason: deferred to sibling repos bigbase-canary-go/python/php
+  - item: Load testing, uptime SLOs, alerting
+    reason: too heavy for a minimalism-first repo; the deploy health check is the only monitoring needed
+
+constraints:
+  tech: "Node 22, Express, GitHub Actions (ubuntu-22.04), bigbase.click as the only deploy target"
+  time: "single-session build"
+  resource: "solo developer (danielvm-git), solo-git integrate profile"
+
+success_criteria:
+  - A push to main produces a green Test Build Release run and a green Deploy run
+  - "curl https://node.bigbase.click returns the current VERSION file's contents in the footer"
+  - A second commit produces a second tag via big-release and a fresh deploy
+
+references:
+  - path: ../../../../.claude/plans/plan-to-generate-this-cryptic-perlis.md
+    note: approved cross-repo plan, now updated with Go/Python learnings this story applies
+  - path: https://github.com/danielvm-git/big-release

@@ -1,11 +1,15 @@
 workflow_mode: solo-git
+active_flow: fix_bug
 session:
   active_epic: e01
   active_story: e01s02
 git:
   branch: main
+bug_cycle:
+  current_step: 5
+  completed_steps: [1, 2, 3, 4]
+  bug_id: BUG-2026-07-30T090000
 handoff:
-  next_skill: kickoff-branch
+  next_skill: release-branch
 metrics:
   story_start: null
-

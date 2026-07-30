@@ -3,9 +3,12 @@
 const assert = require("node:assert");
 const test = require("node:test");
 const http = require("node:http");
+const fs = require("node:fs");
+const path = require("node:path");
 const { createApp } = require("./server");
 
 test("GET / returns footer containing VERSION", async () => {
+  const expectedVersion = fs.readFileSync(path.join(__dirname, "VERSION"), "utf8").trim();
   const app = createApp();
   const server = app.listen(0);
   const { port } = server.address();
@@ -19,7 +22,7 @@ test("GET / returns footer containing VERSION", async () => {
   });
 
   server.close();
-  assert.ok(body.includes("0.1.0"), `expected footer to contain 0.1.0, got: ${body}`);
+  assert.ok(body.includes(expectedVersion), `expected footer to contain ${expectedVersion}, got: ${body}`);
 });
 
 test("listenPort reads PORT env var, falls back to 8080", () => {

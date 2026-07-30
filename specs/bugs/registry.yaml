@@ -1,0 +1,113 @@
+# Bug Registry — bigbase-canary-node
+# Format: inspect-quality audit schema
+
+- bug_id: BUG-2026-07-30T090000
+  date: "2026-07-30"
+  severity: high
+  priority: p0
+  scope: versioning/ci
+  what_happened: "VERSION file was stale at runtime (v0.1.0 vs tag v0.1.1) and server.test.js hardcoded version string"
+  what_expected: "VERSION file should match latest git tag; tests should read VERSION dynamically"
+  steps_to_reproduce: "1. git describe --tags returns v0.1.1 2. cat VERSION returns 0.1.0 3. Tests pass falsely"
+  root_cause: "big-release workflow did not update VERSION file post-release; test hardcoded version"
+  files_changed: "server.test.js, .github/workflows/test-build-release.yml"
+  approach: "Dynamic VERSION read in test + post-release VERSION update step in workflow"
+  risk_level: medium
+  new_tests: 0
+  type_check: pass
+  lint: pass
+  commit_type: fix
+  release_type: patch
+  commit_message: "fix(version): sync VERSION file dynamically in tests and workflow"
+  follow_ups: ""
+  file: specs/bugs/BUG-2026-07-30T090000.md
+  status: fixed
+  github_issue: 1
+
+- bug_id: BUG-2026-07-30T160000
+  date: "2026-07-30"
+  severity: critical
+  priority: p0
+  scope: server/runtime
+  what_happened: "server.js crashes with unhandled exception if VERSION file is missing or unreadable"
+  what_expected: "Server should return 500 gracefully, not crash the process"
+  steps_to_reproduce: "1. rm VERSION 2. npm start 3. curl localhost:8080/ 4. Process crashes with ENOENT"
+  root_cause: "No error handling around fs.readFileSync in request handler"
+  files_changed: ""
+  approach: ""
+  risk_level: high
+  new_tests: 0
+  type_check: pass
+  lint: pass
+  commit_type: fix
+  release_type: patch
+  commit_message: ""
+  follow_ups: ""
+  file: ""
+  status: open
+
+- bug_id: BUG-2026-07-30T160001
+  date: "2026-07-30"
+  severity: high
+  priority: p1
+  scope: server/runtime
+  what_happened: "listenPort crashes on malformed PORT env var (NaN, negative)"
+  what_expected: "Invalid PORT values should fall back to 8080"
+  steps_to_reproduce: "1. PORT=abc npm start 2. Process crashes with RangeError"
+  root_cause: "parseInt returns NaN for non-numeric strings; no validation"
+  files_changed: ""
+  approach: ""
+  risk_level: high
+  new_tests: 0
+  type_check: pass
+  lint: pass
+  commit_type: fix
+  release_type: patch
+  commit_message: ""
+  follow_ups: ""
+  file: ""
+  status: open
+
+- bug_id: BUG-2026-07-30T160002
+  date: "2026-07-30"
+  severity: medium
+  priority: p2
+  scope: ci/workflows
+  what_happened: "CI release job race condition: cancel-in-progress: true can cancel release mid-push"
+  what_expected: "Release job should complete uninterrupted once started"
+  steps_to_reproduce: "1. Push commit A to main 2. Immediately push commit B 3. Run A release gets cancelled"
+  root_cause: "Single concurrency group covers all jobs including release"
+  files_changed: ""
+  approach: ""
+  risk_level: medium
+  new_tests: 0
+  type_check: pass
+  lint: pass
+  commit_type: fix
+  release_type: patch
+  commit_message: ""
+  follow_ups: ""
+  file: ""
+  status: open
+
+- bug_id: BUG-2026-07-30T160003
+  date: "2026-07-30"
+  severity: medium
+  priority: p2
+  scope: tests
+  what_happened: "Test suite lacks error-path coverage and uses loose assertions"
+  what_expected: "Tests should cover error paths and assert HTTP status codes"
+  steps_to_reproduce: "1. Delete VERSION file 2. Run npm test 3. Tests pass (don't test error path)"
+  root_cause: "Tests written for happy path only; edge-case coverage not added"
+  files_changed: ""
+  approach: ""
+  risk_level: medium
+  new_tests: 0
+  type_check: pass
+  lint: pass
+  commit_type: fix
+  release_type: patch
+  commit_message: ""
+  follow_ups: ""
+  file: ""
+  status: open

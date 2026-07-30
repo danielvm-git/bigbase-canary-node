@@ -33,18 +33,18 @@
   what_expected: "Server should return 500 gracefully, not crash the process"
   steps_to_reproduce: "1. rm VERSION 2. npm start 3. curl localhost:8080/ 4. Process crashes with ENOENT"
   root_cause: "No error handling around fs.readFileSync in request handler"
-  files_changed: ""
-  approach: ""
+  files_changed: "server.js, server.test.js"
+  approach: "Wrap readFileSync in try/catch, return 500 on error; accept versionPath option for testability"
   risk_level: high
-  new_tests: 0
+  new_tests: 1
   type_check: pass
   lint: pass
   commit_type: fix
   release_type: patch
-  commit_message: ""
+  commit_message: "fix(server): handle VERSION read errors and malformed PORT gracefully"
   follow_ups: ""
   file: ""
-  status: open
+  status: fixed
 
 - bug_id: BUG-2026-07-30T160001
   date: "2026-07-30"
@@ -55,18 +55,18 @@
   what_expected: "Invalid PORT values should fall back to 8080"
   steps_to_reproduce: "1. PORT=abc npm start 2. Process crashes with RangeError"
   root_cause: "parseInt returns NaN for non-numeric strings; no validation"
-  files_changed: ""
-  approach: ""
+  files_changed: "server.js, server.test.js"
+  approach: "Validate parseInt result with Number.isFinite and >= 0 check"
   risk_level: high
-  new_tests: 0
+  new_tests: 1
   type_check: pass
   lint: pass
   commit_type: fix
   release_type: patch
-  commit_message: ""
+  commit_message: "fix(server): handle VERSION read errors and malformed PORT gracefully"
   follow_ups: ""
   file: ""
-  status: open
+  status: fixed
 
 - bug_id: BUG-2026-07-30T160002
   date: "2026-07-30"
@@ -77,18 +77,18 @@
   what_expected: "Release job should complete uninterrupted once started"
   steps_to_reproduce: "1. Push commit A to main 2. Immediately push commit B 3. Run A release gets cancelled"
   root_cause: "Single concurrency group covers all jobs including release"
-  files_changed: ""
-  approach: ""
+  files_changed: ".github/workflows/test-build-release.yml"
+  approach: "Add job-level concurrency with cancel-in-progress: false to release job"
   risk_level: medium
   new_tests: 0
   type_check: pass
   lint: pass
   commit_type: fix
   release_type: patch
-  commit_message: ""
+  commit_message: "fix(ci): prevent release job from being cancelled by concurrency group"
   follow_ups: ""
   file: ""
-  status: open
+  status: fixed
 
 - bug_id: BUG-2026-07-30T160003
   date: "2026-07-30"
@@ -99,15 +99,15 @@
   what_expected: "Tests should cover error paths and assert HTTP status codes"
   steps_to_reproduce: "1. Delete VERSION file 2. Run npm test 3. Tests pass (don't test error path)"
   root_cause: "Tests written for happy path only; edge-case coverage not added"
-  files_changed: ""
-  approach: ""
+  files_changed: "server.test.js"
+  approach: "Added VERSION-missing error path test, malformed PORT test, HTTP status assertion, structural HTML assertion"
   risk_level: medium
-  new_tests: 0
+  new_tests: 2
   type_check: pass
   lint: pass
   commit_type: fix
   release_type: patch
-  commit_message: ""
+  commit_message: "fix(server): handle VERSION read errors and malformed PORT gracefully"
   follow_ups: ""
   file: ""
-  status: open
+  status: fixed

@@ -6,11 +6,16 @@
   "scripts": {
     "start": "node server.js",
     "build": "echo \"no build needed\"",
+    "lint": "eslint server.js server.test.js",
     "test": "node --test server.test.js"
   },
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0"
   }
 }

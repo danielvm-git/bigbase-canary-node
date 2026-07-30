@@ -1,6 +1,7 @@
 name: Test Build Release
-# version: 3.0.1 — see workflow-templates/CHANGELOG.md
-# Copy to .github/workflows/test-build-release.yml and pair with deploy-node.yml → deploy.yml
+# version: 4.1.0 — see workflow-templates/CHANGELOG.md
+# Reusable workflow reference: danielvm-git/.github/.github/workflows/test-build-release-node.yml@main
+# Paired with deploy-node.yml → deploy.yml
 
 on:
   push:
@@ -18,6 +19,7 @@ concurrency:
 env:
   APP_TYPE: node
   SITE_URL: "https://node.bigbase.click"
+  RELEASE_TOOL: "big-release" # Canary repos use big-release!
 
 jobs:
   test:

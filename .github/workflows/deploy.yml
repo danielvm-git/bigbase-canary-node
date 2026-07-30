@@ -1,6 +1,7 @@
 name: Deploy
-# version: 3.0.1 — see workflow-templates/CHANGELOG.md
-# Copy to .github/workflows/deploy.yml; triggered by test-build-release.yml only
+# version: 4.1.0 — see workflow-templates/CHANGELOG.md
+# Reusable workflow reference: danielvm-git/.github/.github/workflows/deploy-node.yml@main
+# Triggered by test-build-release.yml only
 
 on:
   workflow_run:
@@ -17,6 +18,7 @@ concurrency:
 
 env:
   SITE_URL: "https://node.bigbase.click"
+  HEALTH_CHECK_EXPECTED_BODY: "bigbase canary (Node)"
 
 jobs:
   deploy:
@@ -60,17 +62,23 @@ jobs:
           branch: main
           skip_health_check: true
 
-      - name: Health check
+      - name: Health check (Status & Body Assertion)
         run: |
           ATTEMPTS=8
           INTERVAL=10
           for i in $(seq 1 "$ATTEMPTS"); do
-            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${{ env.SITE_URL }}")
+            RESPONSE=$(curl -sL "${{ env.SITE_URL }}" || true)
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${{ env.SITE_URL }}" || echo "000")
             if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
-              echo "✅ Site LIVE (HTTP $STATUS)"
-              exit 0
+              if echo "$RESPONSE" | grep -q "${{ env.HEALTH_CHECK_EXPECTED_BODY }}"; then
+                echo "✅ Site LIVE (HTTP $STATUS, body content verified)"
+                exit 0
+              else
+                echo "Attempt $i/$ATTEMPTS: HTTP $STATUS but missing expected body content..."
+              fi
+            else
+              echo "Attempt $i/$ATTEMPTS: HTTP $STATUS, waiting ${INTERVAL}s..."
             fi
-            echo "Attempt $i/$ATTEMPTS: HTTP $STATUS, waiting ${INTERVAL}s..."
             sleep "$INTERVAL"
           done
           echo "::error::Health check failed after $ATTEMPTS attempts"

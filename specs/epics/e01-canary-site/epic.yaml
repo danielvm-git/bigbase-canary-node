@@ -5,3 +5,7 @@ stories:
   - id: e01s01
     title: Stand up the Node canary site end-to-end
     risk: P1
+  - id: e01s02
+    title: Adapt CI/CD to Centralized Template Repository Pattern (v4.1.0)
+    risk: P2
+

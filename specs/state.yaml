@@ -1,10 +1,11 @@
 workflow_mode: solo-git
 session:
   active_epic: e01
-  active_story: e01s01
+  active_story: e01s02
 git:
   branch: main
 handoff:
   next_skill: kickoff-branch
 metrics:
   story_start: null
+

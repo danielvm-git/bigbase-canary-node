@@ -1,0 +1,34 @@
+story_id: e01s02
+title: Adapt CI/CD to Centralized Template Repository Pattern (v4.1.0)
+status: passing
+bcps: 3
+tasks:
+  - id: t1
+    description: "Update .github/workflows/test-build-release.yml to v4.1.0 standard with release_tool: big-release"
+    verify: "grep -q 'version: 4.1.0' .github/workflows/test-build-release.yml && grep -q 'APP_TYPE: node' .github/workflows/test-build-release.yml"
+    risk: P2
+    status: passing
+    allure:
+      severity: normal
+      categories:
+        - "CI/CD"
+        - "Infrastructure"
+  - id: t2
+    description: "Update .github/workflows/deploy.yml to v4.1.0 standard with body content assertion"
+    verify: "grep -q 'version: 4.1.0' .github/workflows/deploy.yml && grep -q 'bigbase canary (Node)' .github/workflows/deploy.yml"
+    risk: P2
+    status: passing
+    allure:
+      severity: normal
+      categories:
+        - "CI/CD"
+        - "Deploy"
+  - id: t3
+    description: "Verify preflight baseline and ensure no CHANGE-ME placeholders remain"
+    verify: "bash scripts/preflight.sh && ! grep -rn 'CHANGE-ME' .github/workflows/*.yml"
+    risk: P2
+    status: failing
+    allure:
+      severity: normal
+      categories:
+        - "Preflight"

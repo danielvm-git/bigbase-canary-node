@@ -5,6 +5,6 @@ session:
 git:
   branch: main
 handoff:
-  next_skill: survey-context
+  next_skill: verify-work
 metrics:
   story_start: null

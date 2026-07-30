@@ -5,11 +5,16 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-function createApp() {
+function createApp(opts) {
+  const versionPath = (opts && opts.versionPath) || path.join(__dirname, "VERSION");
   const app = express();
   app.get("/", (_req, res) => {
-    const version = fs.readFileSync(path.join(__dirname, "VERSION"), "utf8").trim();
-    res.send(`<h1>bigbase canary (Node)</h1><footer>v${version}</footer>`);
+    try {
+      const version = fs.readFileSync(versionPath, "utf8").trim();
+      res.send(`<h1>bigbase canary (Node)</h1><footer>v${version}</footer>`);
+    } catch {
+      res.status(500).send("VERSION file unreadable");
+    }
   });
   return app;
 }
@@ -19,7 +24,9 @@ function createApp() {
 // just runs `npm start`, nothing else tells the app what port to use.
 function listenPort() {
   const port = process.env.PORT;
-  return port ? parseInt(port, 10) : 8080;
+  if (!port) return 8080;
+  const parsed = parseInt(port, 10);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 8080;
 }
 
 if (require.main === module) {

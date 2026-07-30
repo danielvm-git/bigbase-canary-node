@@ -13,21 +13,21 @@
 - **Hotspots:** `.github/workflows/test-build-release.yml` (4 touches), `VERSION` (3 touches), `.github/workflows/deploy.yml` (2 touches)
 - **Open bugs (floor):** 0 — no open issues at audit start, registry empty, all CI green
 - **Closed issues:** #1 (VERSION stale, resolved 2026-07-30)
-- **Preflight:** PASS (2/2 tests, 198ms)
-- **CI:** All green (latest deploy success 2026-07-30T12:03:31Z)
-- **Live site:** https://node.bigbase.click — HTTP 200, footer v0.1.2
+- **Preflight:** PASS (4/4 tests, 110ms)
+- **CI:** All green (latest deploy success 2026-07-30T13:52:04Z)
+- **Live site:** https://node.bigbase.click — HTTP 200, footer v0.1.4
 
 ### Per-Module Risk Levels
 
 | Module | Risk | Rationale |
 |--------|------|-----------|
-| `server.js` | P2 | Single route, VERSION file read, port binding — crash risk if VERSION missing |
-| `server.test.js` | P2 | Only 2 tests, no edge-case coverage |
+| `server.js` | P2 | Single route, VERSION file read, port binding |
+| `server.test.js` | P2 | 4 tests covering happy + error paths |
 | `.github/workflows/test-build-release.yml` | P1 | Release pipeline, highest churn (4 touches), drives versioning |
 | `.github/workflows/deploy.yml` | P1 | Production deploy, health check logic |
 | `scripts/preflight.sh` | P2 | Gate script, runs on every commit |
 | `scripts/land-branch.sh` | P3 | Solo-git landing, low frequency |
-| `package.json` | P2 | Dependency declarations, script definitions |
+| `package.json` | P2 | Dependencies and script definitions |
 | `VERSION` | P1 | Runtime version source, 3 historical touches |
 
 ### Seeded Issues
@@ -38,115 +38,145 @@
 
 ## Audit Findings
 
-### BUG-2026-07-30T160000: server.js crashes if VERSION file is missing or unreadable
+### BUG-2026-07-30T090000: VERSION file stale at runtime (CLOSED — pre-existing)
+
+**Severity:** high | **Priority:** p0 | **Scope:** versioning/ci
+**Status:** fixed (pre-audit, 2026-07-30)
+
+GitHub issue #1. Fixed by commit `4cfa5b2` before audit began. Cross-verified: VERSION file now syncs with git tag via CI workflow step.
+
+---
+
+### BUG-2026-07-30T160000: server.js crashes if VERSION file is missing or unreadable (FIXED)
 
 **Severity:** critical | **Priority:** p0 | **Scope:** server/runtime
-**Status:** open
+**Status:** fixed — commit `f7d59b4`
 
-**What happened:** `fs.readFileSync(path.join(__dirname, "VERSION"), "utf8")` in the request handler throws an unhandled exception if the VERSION file is deleted, empty after a failed CI write, or unreadable. Every `GET /` then crashes the process.
+**What happened:** `fs.readFileSync` in the request handler threw an unhandled exception if VERSION was missing. Every `GET /` crashed the process.
 
-**What I expected:** The canary should return a 500 error gracefully or serve a fallback, not crash the entire process. A canary that crashes is a false negative — it looks like a deploy failure when the real problem is a missing file.
+**Fix:** Wrapped `readFileSync` in try/catch, returning 500 on error. Added `versionPath` option to `createApp` for testability.
 
-**Steps to reproduce:**
-1. `rm VERSION`
-2. `npm start`
-3. `curl http://localhost:8080/`
-4. Process crashes with `ENOENT: no such file or directory`
+**Verification:**
+```
+$ rm VERSION && npm start & curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/
+500
+```
 
-**Root cause:** No error handling around `fs.readFileSync` in the request handler.
-
-**Risk level:** high — the canary's entire purpose is being a regression signal; a crash defeats that.
+**New test:** "GET / returns 500 when VERSION file is missing" — passes.
 
 ---
 
-### BUG-2026-07-30T160001: listenPort crashes on malformed PORT env var
+### BUG-2026-07-30T160001: listenPort crashes on malformed PORT env var (FIXED)
 
 **Severity:** high | **Priority:** p1 | **Scope:** server/runtime
-**Status:** open
+**Status:** fixed — commit `f7d59b4`
 
-**What happened:** `parseInt(process.env.PORT, 10)` returns `NaN` for non-numeric strings. Express throws `RangeError: "port" argument must be >= 0 and < 65536` when calling `.listen(NaN)`, crashing the process on startup.
+**What happened:** `parseInt("abc", 10)` returns NaN. Express crashed with RangeError on `.listen(NaN)`.
 
-**What I expected:** Invalid PORT values should fall back to 8080, matching the documented behavior ("falling back to 8080 for local dev").
+**Fix:** Added `Number.isFinite(parsed) && parsed >= 0` validation after parseInt. Falls back to 8080 for invalid values.
 
-**Steps to reproduce:**
-1. `PORT=abc npm start`
-2. Process crashes with `RangeError`
+**Verification:**
+```
+$ PORT=abc node -e "const {listenPort}=require('./server'); console.log(listenPort())"
+8080
+```
 
-**Root cause:** No validation after `parseInt`. NaN and negative values are not caught.
-
-**Risk level:** high — deploy engine injects PORT; a malformed value kills the canary before it can serve anything.
+**New test:** "listenPort falls back to 8080 for malformed PORT" — passes.
 
 ---
 
-### BUG-2026-07-30T160002: CI release job race condition with cancel-in-progress
+### BUG-2026-07-30T160002: CI release job race condition (FIXED)
 
 **Severity:** medium | **Priority:** p2 | **Scope:** ci/workflows
-**Status:** open
+**Status:** fixed — commit `327865b`
 
-**What happened:** The `test-build-release.yml` workflow uses `cancel-in-progress: true` for the entire pipeline, including the release job. If two commits land on main in quick succession, the second run cancels the first mid-release, potentially leaving a git tag without a corresponding VERSION commit, or corrupting the push.
+**What happened:** `cancel-in-progress: true` at workflow level could cancel the release job mid-push.
 
-**What I expected:** The release job should complete uninterrupted once started. Test/build jobs can be cancelled safely.
+**Fix:** Added job-level concurrency group to release job with `cancel-in-progress: false`.
 
-**Steps to reproduce:**
-1. Push commit A to main
-2. Immediately push commit B to main
-3. Run A's release job gets cancelled mid-execution by Run B
-
-**Root cause:** Single concurrency group covers all jobs including release.
-
-**Risk level:** medium — low frequency on a canary repo, but a real data-corruption risk.
+**Verification:** Workflow YAML now has two concurrency groups: `pipeline-*` (cancel: true) for test/build, `release-*` (cancel: false) for release.
 
 ---
 
-### BUG-2026-07-30T160003: Test suite lacks error-path and assertion rigor
+### BUG-2026-07-30T160003: Test suite lacks error-path coverage (FIXED)
 
 **Severity:** medium | **Priority:** p2 | **Scope:** tests
-**Status:** open
+**Status:** fixed — commit `f7d59b4`
 
-**What happened:** `server.test.js` has 2 tests covering happy paths only. Missing: HTTP status code assertion, VERSION-missing error path, malformed PORT edge cases, structural HTML assertion. Test 1 uses `body.includes(version)` which would pass on a 500 error page containing the version string.
+**What happened:** Only 2 happy-path tests. Missing error paths, status code assertions, structural HTML checks.
 
-**What I expected:** A canary whose purpose is proving the deploy pipeline works should have tests that catch regressions in error handling, not just happy-path behavior.
+**Fix:** Added 2 new tests:
+1. VERSION-missing error path (500 response)
+2. Malformed PORT fallback (NaN, negative, empty)
 
-**Steps to reproduce:**
-1. Delete VERSION file
-2. Run `npm test`
-3. Tests pass (they don't test the error path)
+Tightened existing assertion from `includes(version)` to `includes(<footer>v${version}</footer>)` and added HTTP 200 check.
 
-**Root cause:** Tests written for the initial feature; edge-case coverage not added.
-
-**Risk level:** medium — false-positive test results undermine the canary's reliability signal.
+**Verification:**
+```
+$ npm test
+✔ GET / returns 200 with footer containing VERSION
+✔ GET / returns 500 when VERSION file is missing
+✔ listenPort reads PORT env var, falls back to 8080
+✔ listenPort falls back to 8080 for malformed PORT
+ℹ tests 4, pass 4, fail 0
+```
 
 ---
 
 ## Verification Evidence
 
-### Preflight (pre-audit)
+### Preflight (post-audit)
 ```
 > bigbase-canary-node@0.1.0 test
 > node --test server.test.js
 
-✔ GET / returns footer containing VERSION (15.169166ms)
-✔ listenPort reads PORT env var, falls back to 8080 (0.17975ms)
-ℹ tests 2, pass 2, fail 0, duration 198ms
+✔ GET / returns 200 with footer containing VERSION (10.184ms)
+✔ GET / returns 500 when VERSION file is missing (2.579ms)
+✔ listenPort reads PORT env var, falls back to 8080 (0.144ms)
+✔ listenPort falls back to 8080 for malformed PORT (0.115ms)
+ℹ tests 4, pass 4, fail 0, duration 110ms
 ```
 
-### Live site (pre-audit)
+### Live site (post-audit)
 ```
+$ curl -s -o /dev/null -w '%{http_code}' https://node.bigbase.click
+200
 $ curl -s https://node.bigbase.click
-<script>window.__BIGBASE_METADATA__ = {"deployedAt":"2026-07-30T12:03:40Z","version":"6d1a28e..."}</script>
-<h1>bigbase canary (Node)</h1><footer>v0.1.2</footer>
+<footer>v0.1.4</footer>
 ```
 
-### CI status (pre-audit)
-All green. Latest deploy: success at 2026-07-30T12:03:31Z.
+### CI status (post-audit)
+All green. 5 most recent runs all success:
+- Deploy: success (2026-07-30T13:52:04Z)
+- fix(ci): success (2026-07-30T13:51:16Z)
+- Deploy: success (2026-07-30T13:47:39Z)
+- fix(server): success (2026-07-30T13:46:35Z)
+
+### Security review
+Reviewed diffs for commits `f7d59b4` and `327865b`:
+- No injection vectors (versionPath is internal, PORT validation is numeric-only)
+- No secrets exposure
+- No information leakage in error responses ("VERSION file unreadable" is safe)
+- CI workflow uses SHA-pinned actions, no new attack surface
+
+### Contract validation (FROZEN boundaries)
+- `server.js`: reads VERSION at request time, serves `<footer>v{version}</footer>` — preserved
+- `server.js`: reads `process.env.PORT`, falls back to 8080 — preserved
+- `server.test.js`: tests cover happy path + error paths — enhanced, contract preserved
+- `.github/workflows/*`: CI/CD pipeline unchanged except concurrency fix — preserved
 
 ---
 
-## Fix Plan
+## Summary
 
-| Bug | Branch | Fix Strategy | TDD? |
-|-----|--------|-------------|------|
-| BUG-2026-07-30T160000 | fix/version-read-error-handling | Wrap readFileSync in try/catch, return 500 on error | Yes |
-| BUG-2026-07-30T160001 | fix/port-parsing-validation | Validate parseInt result, fallback to 8080 | Yes |
-| BUG-2026-07-30T160002 | fix/ci-release-concurrency | Split concurrency group for release job | No (config) |
-| BUG-2026-07-30T160003 | (addressed by fix/ branches above) | Tests added alongside each fix | Yes |
+| Metric | Pre-Audit | Post-Audit |
+|--------|-----------|------------|
+| Open bugs | 0 | 0 |
+| Discovered bugs | — | 4 |
+| Fixed bugs | — | 4 |
+| Tests | 2 | 4 |
+| Preflight | PASS | PASS |
+| CI | green | green |
+| Live site | v0.1.2, HTTP 200 | v0.1.4, HTTP 200 |
+
+**Audit result: PASS.** All discovered bugs fixed, all verification gates green, contract boundaries preserved.

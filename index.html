@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bigbase canary (Node) · released by big-release</title>
+<meta name="description" content="A live Node.js service versioned and deployed by big-release on every merge to main. The version you see is real.">
+<style>
+  :root {
+    --n0:#ffffff; --n25:#fafafb; --n40:#f4f4f7; --n50:#ededf0;
+    --n100:#e4e4e7; --n200:#d8d8db; --n300:#adadb0; --n400:#97979b;
+    --n600:#6c6c71; --n700:#56565c; --n800:#2d2d31; --n850:#1d1d21; --n900:#16161a;
+    --indigo:#4f46e5; --indigo-600:#4338ca; --indigo-tint:rgba(79,70,229,.10);
+    --go:#44b32e; --go-deep:#2d8a2d; --go-tint:rgba(68,179,46,.12);
+    --ok:#10b981; --ok-tint:rgba(16,185,129,.14);
+    --bg:var(--n25); --surface:var(--n0); --surface-2:var(--n40);
+    --ink:var(--n800); --ink-2:var(--n600); --ink-3:var(--n400);
+    --line:var(--n100); --line-strong:var(--n200);
+    --code-bg:#0f1720; --code-ink:#dfe7ef;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono","Fira Code",Menlo,Consolas,monospace;
+    --r-s:8px; --r-m:12px; --r-l:16px; --r-full:9999px;
+    --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+    --shadow-l:0 12px 32px rgba(16,24,40,.10),0 2px 8px rgba(16,24,40,.06);
+    --maxw:1080px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:var(--n900); --surface:var(--n850); --surface-2:#232329;
+      --ink:#f4f4f7; --ink-2:#adadb0; --ink-3:#6c6c71;
+      --line:#2a2a30; --line-strong:#35353c; --code-bg:#0b1016;
+      --indigo-tint:rgba(99,91,255,.16); --go-tint:rgba(68,179,46,.16);
+      --shadow:0 1px 3px rgba(0,0,0,.5); --shadow-l:0 16px 40px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:var(--n25); --surface:var(--n0); --surface-2:var(--n40);
+    --ink:var(--n800); --ink-2:var(--n600); --ink-3:var(--n400);
+    --line:var(--n100); --line-strong:var(--n200); --code-bg:#0f1720;
+    --indigo-tint:rgba(79,70,229,.10); --go-tint:rgba(68,179,46,.12);
+    --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+    --shadow-l:0 12px 32px rgba(16,24,40,.10),0 2px 8px rgba(16,24,40,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:var(--n900); --surface:var(--n850); --surface-2:#232329;
+    --ink:#f4f4f7; --ink-2:#adadb0; --ink-3:#6c6c71;
+    --line:#2a2a30; --line-strong:#35353c; --code-bg:#0b1016;
+    --indigo-tint:rgba(99,91,255,.16); --go-tint:rgba(68,179,46,.16);
+    --shadow:0 1px 3px rgba(0,0,0,.5); --shadow-l:0 16px 40px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.02em}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+  .bar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 88%,transparent);
+    backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+  .bar-in{display:flex;align-items:center;justify-content:space-between;gap:16px;height:60px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.02em}
+  .brand .dot{width:11px;height:11px;border-radius:var(--r-full);background:var(--indigo);box-shadow:0 0 0 4px var(--indigo-tint)}
+  .langs{display:flex;gap:6px}
+  .lang{display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:var(--r-full);font-size:13px;font-weight:600;color:var(--ink-2);border:1px solid transparent}
+  .lang .sw{width:8px;height:8px;border-radius:var(--r-full);background:var(--ink-3)}
+  .lang.active{color:var(--ink);background:var(--go-tint);border-color:color-mix(in srgb,var(--go) 40%,transparent)}
+  .lang.active .sw{background:var(--go)}
+  .bar-right{display:flex;align-items:center;gap:10px}
+  .ghost{padding:7px 13px;border-radius:var(--r-full);font-size:13px;font-weight:600;border:1px solid var(--line-strong);color:var(--ink-2);cursor:pointer;background:transparent}
+  .ghost:hover{color:var(--ink);border-color:var(--ink-3)}
+  .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:var(--r-full);border:1px solid var(--line-strong);background:transparent;color:var(--ink-2);cursor:pointer;font-size:15px}
+  .icon-btn:hover{color:var(--ink)}
+  .hero{padding:72px 0 40px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:-40% 30% auto -10%;height:420px;
+    background:radial-gradient(60% 60% at 30% 20%,var(--go-tint),transparent 70%);filter:blur(10px);pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;position:relative}
+  .hero h1{font-size:44px;line-height:1.05;margin:14px 0 16px}
+  .hero h1 em{font-style:normal;color:var(--go-deep)}
+  .lede{font-size:18px;color:var(--ink-2);max-width:44ch}
+  .lede code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 6px;border-radius:6px}
+  .cta-row{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:var(--r-s);font-size:14px;font-weight:650;cursor:pointer;border:1px solid transparent}
+  .btn-primary{background:var(--go-deep);color:#fff}
+  .btn-primary:hover{background:var(--go)}
+  .btn-secondary{background:transparent;color:var(--ink);border-color:var(--line-strong)}
+  .btn-secondary:hover{border-color:var(--ink-3)}
+  .live-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--shadow-l);overflow:hidden}
+  .live-top{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .tl{width:11px;height:11px;border-radius:var(--r-full);background:var(--n300)}
+  .live-url{margin-left:8px;font-size:12.5px;color:var(--ink-2)}
+  .live-body{padding:30px 26px 26px;text-align:center}
+  .pill{display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:var(--r-full);font-size:12px;font-weight:650;background:var(--ok-tint);color:var(--ok)}
+  .pulse{width:8px;height:8px;border-radius:var(--r-full);background:var(--ok);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 8px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+  .ver{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:64px;letter-spacing:-.03em;line-height:1;margin:18px 0 6px;
+    background:linear-gradient(180deg,var(--go),var(--go-deep));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .ver-cap{font-size:13px;color:var(--ink-2)}
+  .set-by{margin-top:16px;padding-top:16px;border-top:1px dashed var(--line-strong);font-size:12.5px;color:var(--ink-3)}
+  .set-by b{color:var(--indigo);font-weight:650}
+  section{padding:56px 0;border-top:1px solid var(--line)}
+  .sec-head{max-width:60ch;margin-bottom:34px}
+  .sec-head h2{font-size:28px;margin:10px 0 8px}
+  .sec-head p{color:var(--ink-2);margin:0;font-size:16px}
+  .loop{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:22px 20px;position:relative}
+  .step .n{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--go-deep);display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:var(--r-full);background:var(--go-tint);margin-bottom:14px}
+  .step h3{font-size:16px;margin-bottom:6px}
+  .step p{margin:0;font-size:14px;color:var(--ink-2)}
+  .step code{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:var(--surface-2);padding:1px 5px;border-radius:5px}
+  .step .arrow{position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--line-strong);z-index:2}
+  .step:last-child .arrow{display:none}
+  .files{display:grid;gap:16px}
+  .file{border:1px solid var(--line);border-radius:var(--r-m);overflow:hidden;background:var(--code-bg)}
+  .file-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.07)}
+  .file-name{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13px;color:#c8d2dd}
+  .file-name .tag{font-family:var(--sans);font-size:11px;font-weight:600;color:#8b96a3;background:rgba(255,255,255,.06);padding:2px 8px;border-radius:var(--r-full)}
+  .copy{font-family:var(--sans);font-size:12px;font-weight:600;color:#aeb8c4;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);padding:5px 11px;border-radius:6px}
+  .copy:hover{color:#fff;background:rgba(255,255,255,.12)}
+  .copy.done{color:var(--ok);border-color:var(--ok)}
+  pre{margin:0;padding:18px;overflow-x:auto}
+  code.blk{font-family:var(--mono);font-size:13px;line-height:1.65;color:var(--code-ink);white-space:pre}
+  .c-com{color:#6b7d8f} .c-key{color:#8fd6ff} .c-str{color:#b6e3a7} .c-fn{color:#ffd580}
+  .add{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+  .steps-list{list-style:none;margin:0;padding:0;display:grid;gap:18px}
+  .steps-list li{display:flex;gap:14px}
+  .steps-list .k{flex:none;width:28px;height:28px;border-radius:var(--r-full);display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:600;background:var(--indigo-tint);color:var(--indigo)}
+  .steps-list h3{font-size:15px;margin-bottom:3px}
+  .steps-list p{margin:0;font-size:14px;color:var(--ink-2)}
+  .steps-list code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
+  .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:26px}
+  .rule{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);padding:20px}
+  .rule .cmt{font-family:var(--mono);font-size:13px;color:var(--go-deep);font-weight:600}
+  .rule .arrow{color:var(--ink-3);margin:0 6px}
+  .rule .bump{font-family:var(--mono);font-size:13px;color:var(--ink);font-weight:600}
+  .rule p{margin:10px 0 0;font-size:13.5px;color:var(--ink-2)}
+  .hist-link{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:650;color:var(--go-deep)}
+  .hist-link:hover{color:var(--go)}
+  footer.site{border-top:1px solid var(--line);background:var(--surface);padding:44px 0}
+  .foot-grid{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+  .foot-langs{display:flex;gap:8px;flex-wrap:wrap}
+  .foot-lang{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r-full);border:1px solid var(--line-strong);font-size:13px;font-weight:600;color:var(--ink-2)}
+  .foot-lang:hover{color:var(--ink);border-color:var(--ink-3)}
+  .foot-lang .sw{width:8px;height:8px;border-radius:var(--r-full)}
+  .foot-note{font-size:13px;color:var(--ink-3)}
+  @media (max-width:860px){
+    .hero-grid,.add{grid-template-columns:1fr;gap:32px}
+    .loop,.rules{grid-template-columns:1fr}
+    .step .arrow{display:none}
+    .langs{display:none}
+    .hero h1{font-size:34px}
+    .ver{font-size:52px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+  <div class="bar">
+    <div class="wrap bar-in">
+      <a class="brand" href="https://github.com/danielvm-git/big-release"><span class="dot"></span> big-release</a>
+      <div class="langs">
+        <a class="lang" href="https://go.bigbase.click"><span class="sw"></span> Go</a>
+        <span class="lang active"><span class="sw"></span> Node</span>
+        <a class="lang" href="https://python.bigbase.click"><span class="sw"></span> Python</a>
+        <a class="lang" href="https://php.bigbase.click"><span class="sw"></span> PHP</a>
+      </div>
+      <div class="bar-right">
+        <a class="ghost" href="https://github.com/danielvm-git/bigbase-canary-node">This repo ↗</a>
+        <button class="icon-btn" id="theme" aria-label="Toggle light or dark theme" title="Toggle theme">◐</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">bigbase canary · Node</span>
+        <h1>This page is live on <em>v{{VERSION}}</em>.<br>big-release set that number.</h1>
+        <p class="lede">A real Node.js service, versioned and shipped by big-release on every merge to <code>main</code>. The version on the right isn't a screenshot — it's this app reading its own <code>VERSION</code> file, right now.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#add">Add it to your Node project</a>
+          <a class="btn btn-secondary" href="#files">See the 3 files ↓</a>
+        </div>
+      </div>
+      <div class="live-card">
+        <div class="live-top">
+          <span class="tl"></span><span class="tl"></span><span class="tl"></span>
+          <span class="live-url mono">node.bigbase.click</span>
+        </div>
+        <div class="live-body">
+          <span class="pill"><span class="pulse"></span> LIVE · deploy passing</span>
+          <div class="ver">v{{VERSION}}</div>
+          <div class="ver-cap">served live from this app's <span class="mono">VERSION</span> file</div>
+          <div class="set-by">▲ version computed &amp; released by <b>big-release</b> — no human typed it</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">How this version happened</span>
+        <h2>One merge, three automatic moves</h2>
+        <p>big-release runs in CI after tests pass. It reads your commits, decides the next version, and ships it — no manual tagging, no changelog edits.</p>
+      </div>
+      <div class="loop">
+        <div class="step">
+          <span class="n">1</span>
+          <h3>A conventional commit lands</h3>
+          <p>Someone merges <code>feat: add /healthz endpoint</code> to <code>main</code>. That prefix is the only versioning input.</p>
+          <span class="arrow">→</span>
+        </div>
+        <div class="step">
+          <span class="n">2</span>
+          <h3>big-release computes the bump</h3>
+          <p><code>feat</code> means a minor bump. It reads the last git tag and calculates the next semantic version automatically.</p>
+          <span class="arrow">→</span>
+        </div>
+        <div class="step">
+          <span class="n">3</span>
+          <h3>It tags, releases &amp; deploys</h3>
+          <p>Pushes the git tag, creates the GitHub Release with notes, bumps <code>VERSION</code> — and this page redeploys.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="files">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">The three files that did it</span>
+        <h2>Copy these into your repo. That's the setup.</h2>
+        <p>Straight from this canary — nothing hidden, nothing generated on the fly.</p>
+      </div>
+      <div class="files">
+
+        <div class="file">
+          <div class="file-head">
+            <span class="file-name">.big-release.yml <span class="tag">release config</span></span>
+            <button class="copy" type="button">Copy</button>
+          </div>
+          <pre><code class="blk"><span class="c-com"># big-release configuration</span>
+<span class="c-key">tagFormat</span>: <span class="c-str">"v${version}"</span>
+<span class="c-key">initialVersion</span>: <span class="c-str">"0.1.0"</span>
+
+<span class="c-key">plugins</span>:
+  - changelog
+  - git
+  - github</code></pre>
+        </div>
+
+        <div class="file">
+          <div class="file-head">
+            <span class="file-name">.github/workflows/test-build-release.yml <span class="tag">CI</span></span>
+            <button class="copy" type="button">Copy</button>
+          </div>
+          <pre><code class="blk"><span class="c-key">release</span>:
+  <span class="c-key">if</span>: github.ref == <span class="c-str">'refs/heads/main'</span> &amp;&amp; github.event_name == <span class="c-str">'push'</span>
+  <span class="c-key">needs</span>: [build]
+  <span class="c-key">permissions</span>: { contents: write }
+  <span class="c-key">steps</span>:
+    - <span class="c-key">uses</span>: actions/checkout@v7
+      <span class="c-key">with</span>: { fetch-depth: 0 }
+
+    - <span class="c-key">name</span>: Install big-release
+      <span class="c-key">run</span>: |
+        curl -sL https://github.com/danielvm-git/big-release/releases/latest/download/big-release-linux-amd64 -o big-release
+        chmod +x big-release &amp;&amp; sudo mv big-release /usr/local/bin/
+
+    - <span class="c-key">name</span>: Run big-release
+      <span class="c-key">run</span>: big-release release --verbose
+      <span class="c-key">env</span>: { GITHUB_TOKEN: <span class="c-str">"${{ secrets.GITHUB_TOKEN }}"</span> }</code></pre>
+        </div>
+
+        <div class="file">
+          <div class="file-head">
+            <span class="file-name">package.json <span class="tag">scripts</span></span>
+            <button class="copy" type="button">Copy</button>
+          </div>
+          <pre><code class="blk"><span class="c-str">"scripts"</span>: {
+  <span class="c-str">"start"</span>: <span class="c-str">"node server.js"</span>,
+  <span class="c-str">"test"</span>: <span class="c-str">"node --test server.test.js"</span>,
+  <span class="c-str">"lint"</span>: <span class="c-str">"eslint server.js server.test.js"</span>
+}</code></pre>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="add">
+    <div class="wrap add">
+      <div>
+        <span class="eyebrow">Add it to your Node project</span>
+        <h2 style="font-size:28px;margin:10px 0 14px">From zero to automated releases in four steps</h2>
+        <p style="color:var(--ink-2);margin:0 0 22px">No plugins to wire, no version fields to hand-edit. One static binary in CI does it all.</p>
+        <div class="file">
+          <div class="file-head">
+            <span class="file-name">terminal <span class="tag">local test</span></span>
+            <button class="copy" type="button">Copy</button>
+          </div>
+          <pre><code class="blk"><span class="c-com"># preview the next release without publishing</span>
+<span class="c-fn">big-release</span> --dry-run</code></pre>
+        </div>
+      </div>
+      <ol class="steps-list">
+        <li><span class="k">1</span><div><h3>Commit with a convention</h3><p>Use <code>feat:</code> / <code>fix:</code> prefixes. That's the whole contract.</p></div></li>
+        <li><span class="k">2</span><div><h3>Drop in <code>.big-release.yml</code></h3><p>Set <code>tagFormat</code> and pick your plugins. Copy the block on the left.</p></div></li>
+        <li><span class="k">3</span><div><h3>Add the release job</h3><p>Install the binary, run <code>big-release release</code> after your tests pass.</p></div></li>
+        <li><span class="k">4</span><div><h3>Merge to <code>main</code></h3><p>big-release does the rest — tag, GitHub Release, changelog, deploy.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="mechanics">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow">Why the version is what it is</span>
+        <h2>Every bump is decided by a commit — not a human</h2>
+        <p>big-release maps Conventional Commit types to semantic-version bumps. That's the entire rule set.</p>
+      </div>
+      <div class="rules">
+        <div class="rule">
+          <span class="cmt">feat:</span><span class="arrow">→</span><span class="bump">minor</span>
+          <p>A new feature bumps the middle digit — <span class="mono">0.3.1 → 0.4.0</span>.</p>
+        </div>
+        <div class="rule">
+          <span class="cmt">fix:</span><span class="arrow">→</span><span class="bump">patch</span>
+          <p>A bug fix bumps the last digit — <span class="mono">0.3.1 → 0.3.2</span>.</p>
+        </div>
+        <div class="rule">
+          <span class="cmt">BREAKING CHANGE:</span><span class="arrow">→</span><span class="bump">major</span>
+          <p>A breaking change bumps the first digit — <span class="mono">0.3.1 → 1.0.0</span>.</p>
+        </div>
+      </div>
+      <a class="hist-link" href="https://github.com/danielvm-git/bigbase-canary-node/releases">See this canary's real release history on GitHub →</a>
+    </div>
+  </section>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <div class="brand" style="margin-bottom:10px"><span class="dot"></span> big-release</div>
+          <div class="foot-note">One binary. Every language. The version badge is real.</div>
+        </div>
+        <div class="foot-langs">
+          <a class="foot-lang" href="https://go.bigbase.click"><span class="sw" style="background:#00add8"></span> Go</a>
+          <span class="foot-lang" style="border-color:color-mix(in srgb,var(--go) 45%,transparent)"><span class="sw" style="background:#339933"></span> Node · you are here</span>
+          <a class="foot-lang" href="https://python.bigbase.click"><span class="sw" style="background:#3776ab"></span> Python</a>
+          <a class="foot-lang" href="https://php.bigbase.click"><span class="sw" style="background:#777bb4"></span> PHP</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+<script>
+  (function(){
+    var root=document.documentElement;
+    var t=document.getElementById('theme');
+    if(t){t.addEventListener('click',function(){
+      var cur=root.getAttribute('data-theme');
+      if(!cur){cur=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+      root.setAttribute('data-theme',cur==='dark'?'light':'dark');
+    });}
+    document.querySelectorAll('.copy').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        var pre=btn.closest('.file').querySelector('code.blk');
+        var text=pre?pre.innerText:'';
+        if(navigator.clipboard){navigator.clipboard.writeText(text);}
+        var old=btn.textContent;btn.textContent='Copied ✓';btn.classList.add('done');
+        setTimeout(function(){btn.textContent=old;btn.classList.remove('done');},1400);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

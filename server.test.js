@@ -18,7 +18,7 @@ function getBody(url) {
   });
 }
 
-test("GET / returns 200 with footer containing VERSION", async () => {
+test("GET / returns 200 with body containing VERSION", async () => {
   const expectedVersion = fs.readFileSync(path.join(__dirname, "VERSION"), "utf8").trim();
   const app = createApp();
   const server = app.listen(0);
@@ -28,7 +28,7 @@ test("GET / returns 200 with footer containing VERSION", async () => {
 
   server.close();
   assert.strictEqual(status, 200);
-  assert.ok(body.includes(`<footer>v${expectedVersion}</footer>`), `expected footer with version, got: ${body}`);
+  assert.ok(body.includes(expectedVersion), `expected version in body, got: ${body.slice(0, 200)}`);
 });
 
 test("GET / returns 500 when VERSION file is missing", async () => {
@@ -71,4 +71,16 @@ test("listenPort falls back to 8080 for malformed PORT", () => {
   assert.strictEqual(listenPort(), 8080);
 
   if (original !== undefined) process.env.PORT = original;
+});
+
+test("GET / body contains no raw {{VERSION}} placeholder", async () => {
+  const app = createApp();
+  const server = app.listen(0);
+  const { port } = server.address();
+
+  const { status, body } = await getBody(`http://127.0.0.1:${port}/`);
+
+  server.close();
+  assert.strictEqual(status, 200);
+  assert.ok(!body.includes("{{VERSION}}"), `raw placeholder found in body`);
 });

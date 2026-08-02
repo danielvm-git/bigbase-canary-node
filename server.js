@@ -7,11 +7,18 @@ const path = require("path");
 
 function createApp(opts) {
   const versionPath = (opts && opts.versionPath) || path.join(__dirname, "VERSION");
+  const htmlPath = (opts && opts.htmlPath) || path.join(__dirname, "index.html");
+
+  // Cache the HTML template at startup — it's a static file that only changes
+  // on deploy, so reading it once avoids a file-system hit on every request.
+  const htmlTemplate = fs.readFileSync(htmlPath, "utf8");
+
   const app = express();
   app.get("/", (_req, res) => {
     try {
       const version = fs.readFileSync(versionPath, "utf8").trim();
-      res.send(`<h1>bigbase canary (Node)</h1><footer>v${version}</footer>`);
+      const body = htmlTemplate.split("{{VERSION}}").join(version);
+      res.send(body);
     } catch {
       res.status(500).send("VERSION file unreadable");
     }

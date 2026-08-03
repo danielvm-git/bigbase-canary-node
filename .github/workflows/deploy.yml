@@ -52,7 +52,7 @@ jobs:
           echo "Deploy metadata: $(cat deploy-meta/deploy-meta.json)"
 
       - name: Deploy to BigBase
-        uses: danielvm-git/.github/actions/bigbase-deploy@2e1bd382ecb9f1b96febbb708c8bace2b6408014  # v1
+        uses: danielvm-git/.github/actions/bigbase-deploy@e271157ce50999ccae80fb5dd95258d24da2c598  # v1
         with:
           site_id: ${{ secrets.BIGBASE_SITE_ID }}
           app_type: ${{ steps.meta.outputs.app_type }}
